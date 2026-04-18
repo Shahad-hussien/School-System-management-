@@ -1,0 +1,130 @@
+generator client {
+  provider   = "prisma-client-js"
+  engineType = "binary"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model AcademicYear {
+  id          String       @id @default(cuid())
+  name        String       @unique
+  startDate   DateTime
+  endDate     DateTime
+  enrollments Enrollment[]
+}
+
+model Student {
+  id             String       @id @default(cuid())
+  fullName       String
+  birthDate      DateTime
+  motherName     String
+  gender         String
+  disabilityType String?
+  parentPhone    String
+  imageUrl       String?
+
+  createdAt       DateTime     @default(now())
+  transferInDate  DateTime    // تاريخ النقل أو القبول في المدرسة
+  transferOutDate DateTime?    // تاريخ النقل من المدرسة
+
+  documents      Document[]
+  enrollments    Enrollment[]
+}
+
+model Absence {
+  id           String      @id @default(cuid())
+  enrollmentId String
+  date         DateTime
+  type         AbsenceType @default(UNEXCUSED)
+  reason       String?
+  enrollment   Enrollment  @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+}
+
+model Document {
+  id        String  @id @default(cuid())
+  studentId String
+  title     String
+  fileUrl   String
+  type      String
+  createdAt DateTime @default(now())
+  student   Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+}
+
+model Enrollment {
+  id                    String           @id @default(cuid())
+  studentId             String
+  yearId                String
+  gradeLevel            String
+  section               String
+  status                String           @default("ACTIVE")
+  branch                StudyBranch
+  failureYear           Int              @default(0)
+  stage                 EducationalStage
+  summerCourseStartDate DateTime?
+  absences              Absence[]
+  student               Student          @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  academicYear          AcademicYear     @relation(fields: [yearId], references: [id], onDelete: Cascade)
+  grades                Grade[]
+  notes                 Note[]
+}
+
+model Subject {
+  id         String           @id @default(cuid())
+  name       String
+  stage      EducationalStage
+  gradeLevel String
+  branch     StudyBranch
+  isActive   Boolean          @default(true)
+  grades     Grade[]
+}
+
+model Grade {
+  id               String           @id @default(cuid())
+  enrollmentId     String
+  subjectId        String
+  firstTermMonth1  Float?
+  firstTermMonth2  Float?
+  firstTermMonth3  Float?
+  midYear          Float?
+  midYearState     ExamResultState?
+  secondTermMonth1 Float?
+  secondTermMonth2 Float?
+  finalExam        Float?
+  finalState       ExamResultState?
+  enrollment       Enrollment       @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+  subject          Subject          @relation(fields: [subjectId], references: [id])
+}
+
+model Note {
+  id           String     @id @default(cuid())
+  enrollmentId String
+  authorname   String
+  content      String
+  createdAt    DateTime   @default(now())
+  enrollment   Enrollment @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+}
+
+enum EducationalStage {
+  PRIMARY
+  MIDDLE
+  HIGH
+}
+
+enum StudyBranch {
+  GENERAL
+  SCIENTIFIC
+  LITERARY
+}
+
+enum ExamResultState {
+  PASSED
+  FAILED
+  MAKE_UP
+}
+
+enum AbsenceType {
+  EXCUSED
+  UNEXCUSED
+}
